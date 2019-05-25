@@ -1,0 +1,6 @@
+{
+  "Name": "hinx v0.4 example server",
+  "Host": "0.0.0.0",
+  "Port": 8999,
+  "MaxConn": 233
+}

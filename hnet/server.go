@@ -3,6 +3,7 @@ package hnet
 import (
 	"fmt"
 	"hinx/hiface"
+	"hinx/utils"
 	"net"
 )
 
@@ -17,7 +18,11 @@ type Server struct {
 }
 
 func (s *Server) Start() {
-	fmt.Printf("Start Server Listener At IP: %s, Port: %d.\n", s.IP, s.Port)
+	fmt.Printf("[Hinx] Server Name: %s, Start Server Listener at IP: %s, Port: %d.\n", s.Name, s.IP, s.Port)
+	fmt.Printf("[Hinx] Version: %s, MaxConn: %d, MaxPackageSize: %d.\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPackageSize)
 
 	// 将Start操作放到Goroutine中，避免阻塞
 	go func() {
@@ -88,10 +93,10 @@ func (s *Server) AddRouter(router hiface.IRouter) {
 //初始化Server模块
 func NewServer(name string) hiface.IServer {
 	s := &Server{
-		Name: name,
+		Name: utils.GlobalObject.Name,
 		IPVersion: "tcp4",
-		IP: "0.0.0.0",
-		Port: 8999,
+		IP: utils.GlobalObject.Host,
+		Port: utils.GlobalObject.Port,
 		Router: nil,
 	}
 	return s

@@ -3,6 +3,7 @@ package hnet
 import (
 	"fmt"
 	"hinx/hiface"
+	"hinx/utils"
 	"net"
 )
 
@@ -47,7 +48,7 @@ func (c *Connection) StartReader() {
 
 	for {
 		// 读取数据到buf中
-		buf := make([]byte, 512)
+		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
 		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf error:", err)
