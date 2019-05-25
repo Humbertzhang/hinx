@@ -1,1 +1,1 @@
-# hinx
+# hinx: A Toy TCP Server
