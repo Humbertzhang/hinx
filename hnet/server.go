@@ -1,7 +1,6 @@
 package hnet
 
 import (
-	"errors"
 	"fmt"
 	"hinx/hiface"
 	"net"
@@ -13,6 +12,8 @@ type Server struct {
 	IPVersion 	string
 	IP 			string
 	Port 		int
+	// Server注册的连接对应的处理业务
+	Router 		hiface.IRouter
 }
 
 func (s *Server) Start() {
@@ -47,8 +48,11 @@ func (s *Server) Start() {
 				continue
 			}
 
-			// 将该处理新连接的方法与conn绑定
-			dealConn := NewConnection(conn, cid, CallbackToClient)
+			// 将s.Router与conn绑定
+			// router首先在Server AddRouter时被设置，在处理Connection的生成Connection阶段
+			// 被传给Connection
+			// Connection在处理Request时进行调用
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 
 			// 启动连接业务处理
@@ -76,6 +80,10 @@ func (s *Server) Serve() {
 
 }
 
+func (s *Server) AddRouter(router hiface.IRouter) {
+	s.Router = router
+	fmt.Println("Server add router success.")
+}
 
 //初始化Server模块
 func NewServer(name string) hiface.IServer {
@@ -84,18 +92,7 @@ func NewServer(name string) hiface.IServer {
 		IPVersion: "tcp4",
 		IP: "0.0.0.0",
 		Port: 8999,
+		Router: nil,
 	}
 	return s
-}
-
-// Connection 回调函数
-// 定义当前客户端连接的所绑定的handle
-func CallbackToClient (conn *net.TCPConn, data []byte, cnt  int) error {
-	// 回显业务
-	fmt.Println("[Conn Handler] CallbackToClient...")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("write back error:", err)
-		return errors.New("CallbackToClient error")
-	}
-	return nil
 }

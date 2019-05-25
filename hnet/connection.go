@@ -17,21 +17,21 @@ type Connection struct {
 	// 当前连接状态
 	isClosed bool
 
-	// 当前连接所绑定的处理业务的方法API
-	handleAPI hiface.HandleFunc
-
 	// 告知当前连接已经退出的Channel
 	ExitChan chan bool
+
+	// 该连接的Router
+	Router 	hiface.IRouter
 }
 
 // 初始化当前连接
-func NewConnection(conn *net.TCPConn, connID uint32, callbackApi hiface.HandleFunc) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, router hiface.IRouter) *Connection {
 	c := &Connection{
 		Conn: conn,
 		ConnID: connID,
 		isClosed: false,
-		handleAPI: callbackApi,
 		ExitChan: make(chan bool, 1),
+		Router: router,
 	}
 	return c
 }
@@ -48,16 +48,25 @@ func (c *Connection) StartReader() {
 	for {
 		// 读取数据到buf中
 		buf := make([]byte, 512)
-		cnt, err := c.Conn.Read(buf)
+		_, err := c.Conn.Read(buf)
 		if err != nil {
 			fmt.Println("recv buf error:", err)
 			continue
 		}
-		// 调用当前连接所绑定的handle
-		if err := c.handleAPI(c.Conn, buf, cnt); err != nil {
-			fmt.Println("ConnID:", c.ConnID," Reader handler API error:", err)
-			break
+
+		// 将Conn封装为一个Request
+		request := Request{
+			conn: c,
+			data: buf,
 		}
+
+		// 依次调用Connection注册的Router的PreHandle handle 和 PostHandle
+		// 模板设计模式：先定义好了模板，再由使用者依次调用
+		go func(request hiface.IRequest) {
+			c.Router.PreHandle(request)
+			c.Router.Handle(request)
+			c.Router.PostHandle(request)
+		}(&request)
 	}
 
 }
