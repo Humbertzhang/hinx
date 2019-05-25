@@ -13,3 +13,5 @@
 
 # goland file
 *.xml
+.idea/*
+
