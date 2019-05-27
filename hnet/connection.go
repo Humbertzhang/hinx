@@ -1,9 +1,10 @@
 package hnet
 
 import (
+	"errors"
 	"fmt"
 	"hinx/hiface"
-	"hinx/utils"
+	"io"
 	"net"
 )
 
@@ -47,18 +48,38 @@ func (c *Connection) StartReader() {
 	defer c.Stop()
 
 	for {
-		// 读取数据到buf中
-		buf := make([]byte, utils.GlobalObject.MaxPackageSize)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
-			fmt.Println("recv buf error:", err)
+		dp := NewDataPack()
+		headData := make([]byte, dp.GetHeadLen())
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read msg head error", err)
+			c.ExitChan <- true
 			continue
 		}
+
+		// 拆包，得到msgid 和 msglen，放在msg中
+		msg, err := dp.Unpack(headData)
+		if err != nil {
+			fmt.Println("unpack error:", err)
+			c.ExitChan <- true
+			continue
+		}
+
+		// 根据dataLen 读取 data,存在msg.Data中
+		var data []byte
+		if msg.GetMsgLen() > 0 {
+			data = make([]byte, msg.GetMsgLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("read msg data error:", err)
+				c.ExitChan <- true
+				continue
+			}
+		}
+		msg.SetData(data)
 
 		// 将Conn封装为一个Request
 		request := Request{
 			conn: c,
-			data: buf,
+			msg: msg,
 		}
 
 		// 依次调用Connection注册的Router的PreHandle handle 和 PostHandle
@@ -102,7 +123,26 @@ func (c *Connection) GetConnID() uint32 {
 func (c *Connection) RemoteAddr() net.Addr {
 	return c.Conn.RemoteAddr()
 }
-// 发送数据，将数据发送给远程客户端
-func (c *Connection) Send(data []byte) error {
+
+func (c *Connection) SendMsg(msgID uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("connection closed before send msg")
+	}
+
+	// 将data封包
+	dp := NewDataPack()
+	msg, err := dp.Pack(NewMsgPackage(msgID, data))
+	if err != nil {
+		fmt.Println("pack error msgID = ", msgID)
+		return errors.New("pack error msg")
+	}
+
+	// 写回客户端
+	if _, err := c.Conn.Write(msg); err != nil {
+		fmt.Println("Write msgID ", msgID, " error")
+		c.ExitChan <- true
+		return errors.New("conn Write error")
+	}
+
 	return nil
 }
