@@ -9,6 +9,6 @@ type IServer interface {
 	// 运行
 	Serve()
 	// 添加路由
-	AddRouter(router IRouter)
+	AddRouter(msgID uint32, router IRouter)
 }
 

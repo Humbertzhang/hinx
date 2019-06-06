@@ -13,8 +13,8 @@ type Server struct {
 	IPVersion 	string
 	IP 			string
 	Port 		int
-	// Server注册的连接对应的处理业务
-	Router 		hiface.IRouter
+	// MsgHandler 处理多个业务.
+	msgHandler  hiface.IMsgHandler
 }
 
 func (s *Server) Start() {
@@ -57,7 +57,7 @@ func (s *Server) Start() {
 			// router首先在Server AddRouter时被设置，在处理Connection的生成Connection阶段
 			// 被传给Connection
 			// Connection在处理Request时进行调用
-			dealConn := NewConnection(conn, cid, s.Router)
+			dealConn := NewConnection(conn, cid, s.msgHandler)
 			cid++
 
 			// 启动连接业务处理
@@ -85,8 +85,8 @@ func (s *Server) Serve() {
 
 }
 
-func (s *Server) AddRouter(router hiface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgID uint32, router hiface.IRouter) {
+	s.msgHandler.AddRouter(msgID, router)
 	fmt.Println("Server add router success.")
 }
 
@@ -97,7 +97,7 @@ func NewServer(name string) hiface.IServer {
 		IPVersion: "tcp4",
 		IP: utils.GlobalObject.Host,
 		Port: utils.GlobalObject.Port,
-		Router: nil,
+		msgHandler:NewMsgHandler(),
 	}
 	return s
 }

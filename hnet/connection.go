@@ -22,18 +22,18 @@ type Connection struct {
 	// 告知当前连接已经退出的Channel
 	ExitChan chan bool
 
-	// 该连接的Router
-	Router 	hiface.IRouter
+	// 消息管理msgID
+	msgHandler hiface.IMsgHandler
 }
 
 // 初始化当前连接
-func NewConnection(conn *net.TCPConn, connID uint32, router hiface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, handler hiface.IMsgHandler) *Connection {
 	c := &Connection{
 		Conn: conn,
 		ConnID: connID,
 		isClosed: false,
 		ExitChan: make(chan bool, 1),
-		Router: router,
+		msgHandler: handler,
 	}
 	return c
 }
@@ -82,13 +82,9 @@ func (c *Connection) StartReader() {
 			msg: msg,
 		}
 
-		// 依次调用Connection注册的Router的PreHandle handle 和 PostHandle
-		// 模板设计模式：先定义好了模板，再由使用者依次调用
-		go func(request hiface.IRequest) {
-			c.Router.PreHandle(request)
-			c.Router.Handle(request)
-			c.Router.PostHandle(request)
-		}(&request)
+		// 从路由中找到对应的router
+		// 根据绑定好的MsgID找到对应的api业务，执行
+		go c.msgHandler.DoMsgHandler(&request)
 	}
 
 }

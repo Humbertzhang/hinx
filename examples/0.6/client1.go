@@ -10,7 +10,7 @@ import (
 
 // 模拟客户端
 func main() {
-	fmt.Println("client started...")
+	fmt.Println("client1 started...Need Hello Router")
 
 	// 1. 连接服务器，得到conn链接
 	conn, err := net.Dial("tcp", "127.0.0.1:8999")
@@ -23,7 +23,7 @@ func main() {
 	for {
 		// 发送封包的Msg消息
 		dp := hnet.NewDataPack()
-		binaryMsg, err := dp.Pack(hnet.NewMsgPackage(0, []byte("Hello from client.")))
+		binaryMsg, err := dp.Pack(hnet.NewMsgPackage(1, []byte("Hello from client. Need Hello Router.")))
 		if err != nil {
 			fmt.Println("Pack msg error:", err)
 			return
