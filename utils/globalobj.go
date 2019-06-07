@@ -13,15 +13,17 @@ import (
 
 type GlobalObj struct {
 	// 以下是有关Server的配置
-	TCPServer  		hiface.IServer 	// 当前Hinx全局的Server对象
-	Host 			string 			// 当前服务器监听的IP
-	Port 			int 			// 当前服务器监听的端口
-	Name 			string 			// 当前服务器的名字
+	TCPServer  			hiface.IServer 	// 当前Hinx全局的Server对象
+	Host 				string 			// 当前服务器监听的IP
+	Port 				int 			// 当前服务器监听的端口
+	Name 				string 			// 当前服务器的名字
 
 	// 以下是有关Hinx本身的配置
-	Version 		string 			// hinx版本号
-	MaxConn 		int				// 服务器允许的最大连接数
-	MaxPackageSize 	uint32 			// 数据包最大值的大小
+	Version 			string 			// hinx版本号
+	MaxConn 			int				// 服务器允许的最大连接数
+	MaxPackageSize 		uint32 			// 数据包最大值的大小
+	WorkerPoolSize  	uint32 			// Worker工作池大小
+	MaxWorkerTaskLen 	uint32			// 每个worker对应的任务数的长度
 }
 
 // 定义一个全局的GlobalObj对象，其他包可以直接访问
@@ -55,6 +57,8 @@ func init() {
 		Version: "v0.4",
 		MaxConn: 1000,
 		MaxPackageSize: 4096,
+		WorkerPoolSize: 10,
+		MaxWorkerTaskLen: 1024,
 	}
 
 	// 尝试从配置文件(conf/hinx.json)中拿相应配置，如果拿到了，则覆盖之前的默认值

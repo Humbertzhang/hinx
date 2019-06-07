@@ -26,6 +26,9 @@ func (s *Server) Start() {
 
 	// 将Start操作放到Goroutine中，避免阻塞
 	go func() {
+		// 0 开启消息队列及工作池
+		s.msgHandler.StartWorkerPool()
+
 		// 1，创建一个TCP套接字，即一个Addr对象
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {

@@ -1,0 +1,7 @@
+{
+  "Name": "hinx v0.8 example server",
+  "Host": "0.0.0.0",
+  "Port": 8999,
+  "MaxConn": 233,
+  "WorkerPoolSize": 10
+}

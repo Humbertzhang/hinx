@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"hinx/hiface"
+	"hinx/utils"
 	"io"
 	"net"
 )
@@ -84,9 +85,15 @@ func (c *Connection) StartReader() {
 			msg: msg,
 		}
 
-		// 从路由中找到对应的router
-		// 根据绑定好的MsgID找到对应的api业务，执行
-		go c.msgHandler.DoMsgHandler(&request)
+		// 开启了工作池机制,则将消息发送给工作池
+		if utils.GlobalObject.WorkerPoolSize > 0 {
+			c.msgHandler.SendMsgToQueue(&request)
+		} else {
+			// 未开启工作池，直接处理
+			// 从路由中找到对应的router
+			// 根据绑定好的MsgID找到对应的api业务，执行
+			go c.msgHandler.DoMsgHandler(&request)
+		}
 	}
 
 }
