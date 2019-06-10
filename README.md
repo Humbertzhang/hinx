@@ -2,7 +2,7 @@
 
 hinx's architecture 
 
-![hinx](https://picturesbed.oss-cn-hangzhou.aliyuncs.com/img/20190607151119.png)
+![hinx](https://picturesbed.oss-cn-hangzhou.aliyuncs.com/img/20190610202053.png)
 
 TODO:
 * Complete Connection manage part.
