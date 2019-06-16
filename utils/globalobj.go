@@ -54,7 +54,7 @@ func init() {
 		Port: 8999,
 		Name : "HinxServer",
 
-		Version: "v0.4",
+		Version: "v0.9",
 		MaxConn: 1000,
 		MaxPackageSize: 4096,
 		WorkerPoolSize: 10,

@@ -15,6 +15,8 @@ type Server struct {
 	Port 		int
 	// MsgHandler 处理多个业务.
 	msgHandler  hiface.IMsgHandler
+	// 连接管理器
+	connManager hiface.IConnManager
 }
 
 func (s *Server) Start() {
@@ -56,12 +58,22 @@ func (s *Server) Start() {
 				continue
 			}
 
+			// 在连接前要判断是否超过了最大的连接个数
+			// 若超过则直接关闭此连接
+			if s.connManager.Len() >= utils.GlobalObject.MaxConn {
+				// TODO 给客户响应超出最大连接的错误
+				fmt.Println("Too many connections, aborting this conn...")
+				conn.Close()
+				continue
+			}
+
 			// 将s.Router与conn绑定
 			// router首先在Server AddRouter时被设置，在处理Connection的生成Connection阶段
 			// 被传给Connection
 			// Connection在处理Request时进行调用
-			dealConn := NewConnection(conn, cid, s.msgHandler)
+			dealConn := NewConnection(s, conn, cid, s.msgHandler)
 			cid++
+
 
 			// 启动连接业务处理
 			go dealConn.Start()
@@ -71,7 +83,9 @@ func (s *Server) Start() {
 }
 
 func (s *Server) Stop() {
-	// TODO:将服务器资源状态或者一些已经开辟的链接信息进行停止或回收
+	// 将服务器资源状态或者一些已经开辟的链接信息进行停止或回收
+	s.connManager.ClearConn()
+	fmt.Println("Server has stopped.")
 }
 
 // 用Serve()封装Start和Stop，用户仅需调用Serve即可
@@ -88,9 +102,15 @@ func (s *Server) Serve() {
 
 }
 
+
 func (s *Server) AddRouter(msgID uint32, router hiface.IRouter) {
 	s.msgHandler.AddRouter(msgID, router)
 	fmt.Println("Server add router success.")
+}
+
+
+func (s *Server) GetConnManager() hiface.IConnManager {
+	return s.connManager
 }
 
 //初始化Server模块
@@ -101,6 +121,7 @@ func NewServer(name string) hiface.IServer {
 		IP: utils.GlobalObject.Host,
 		Port: utils.GlobalObject.Port,
 		msgHandler:NewMsgHandler(),
+		connManager: NewConnManager(),
 	}
 	return s
 }

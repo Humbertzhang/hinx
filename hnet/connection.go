@@ -11,6 +11,9 @@ import (
 
 // 连接模块
 type Connection struct {
+	// 当前conn隶属于那个Server
+	HinxServer hiface.IServer
+
 	// Socket
 	Conn *net.TCPConn
 
@@ -32,8 +35,9 @@ type Connection struct {
 }
 
 // 初始化当前连接
-func NewConnection(conn *net.TCPConn, connID uint32, handler hiface.IMsgHandler) *Connection {
+func NewConnection(server hiface.IServer, conn *net.TCPConn, connID uint32, handler hiface.IMsgHandler) *Connection {
 	c := &Connection{
+		HinxServer: server,
 		Conn: conn,
 		ConnID: connID,
 		isClosed: false,
@@ -41,6 +45,11 @@ func NewConnection(conn *net.TCPConn, connID uint32, handler hiface.IMsgHandler)
 		ExitChan: make(chan bool, 1),
 		msgHandler: handler,
 	}
+
+	// 将conn加入到connManager中
+	// 在这里添加了通过Server索引到ConnManager的方法，并通过这个方法可以添加conn到ConnManager中
+	c.HinxServer.GetConnManager().AddConn(c)
+
 	return c
 }
 
@@ -137,6 +146,9 @@ func (c *Connection) Stop() {
 	c.isClosed = true
 	c.Conn.Close()
 	close(c.ExitChan)
+	
+	// 从连接管理器中删除Conn
+	c.HinxServer.GetConnManager().DeleteConn(c)
 }
 // 获取当前连接绑定的Connection
 func (c *Connection) GetTCPConnection() *net.TCPConn {
